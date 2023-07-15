@@ -56,6 +56,50 @@ class GetEmbeddings(object):
         print('Splitted doc:', len(splitted_doc))
         return splitted_doc
 
+    def get_embeddings_st(
+        self, documents, chunk_size_limit, max_chunk_overlap, dir_to_store
+    ):
+        """
+        Create chunks and then get embedding for each chunk. 
+        If embeddings already exists, then load them.
+        
+        Parameters
+        ----------
+        documents : langchain.docstore.document.Document
+            Langchain document object.
+        chunk_size_limit : int
+            Lenght of each chunk in characters.
+        max_chunk_overlap : int
+            Character overlap.
+        dir_to_store : string
+            Path to store.
+        Returns
+        -------
+        vector_store: angchain.vectorstores.FAISS
+            Embedding vectors as FAISS object.
+        """
+        
+        # If not exists, create them.
+        splitted_doc = self.split_text_chunks(
+            documents, chunk_size_limit, max_chunk_overlap
+        )
+        # Use OpenAI embeddings service.
+        embeddings = OpenAIEmbeddings()
+        vector_store = FAISS.from_documents(
+            splitted_doc, embeddings
+        )
+        print('Saved')
+        # If path not exists, create it.
+        if not os.path.isdir(self.documents_dir + '/' + dir_to_store):
+            os.makedirs(self.documents_dir + '/' + dir_to_store)
+            print(
+                "created folder : ", 
+                self.documents_dir + '/' + dir_to_store
+            )
+        # Save embeddings store.
+        vector_store.save_local(self.documents_dir + '/' + dir_to_store)
+        return vector_store
+
     def get_embeddings(
         self, documents, chunk_size_limit, max_chunk_overlap, dir_to_store
     ):
@@ -143,4 +187,6 @@ class GetEmbeddings(object):
         print(f"""Total word count: {total_word_count}""")
         print(f"""Total tokens: {total_token_count}""")
         print(f"""Embedding Cost: ${total_token_cost} MXN""")
-        return splitted_doc
+        return [
+            splitted_doc, total_word_count, total_token_count, total_token_cost
+        ]
