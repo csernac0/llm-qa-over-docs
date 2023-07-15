@@ -17,16 +17,30 @@ from langchain.chains import RetrievalQAWithSourcesChain
 
 
 class QAWithContext(object):
-    def __init__(self):
+    def __init__(self, documents_dir):
         """
-        Instanciate OpenAI api key.
+        Instanciate OpenAI api key from .env file.
+        Instanciate documents dir.
         """
+        self.documents_dir = documents_dir
         load_dotenv()
         os.environ[
             "OPENAI_API_KEY"
         ] = os.getenv("OPENAI_API_KEY")
 
     def print_result(self, result):
+        """
+        Format results.
+        
+        Parameters:
+        -----------
+            result : json
+                Results of QA. Keys: ['question', 'answer', 'source_documents']
+        Returns:
+        -----------
+            output_text: Markdown 
+                Formated text.
+        """
         output_text = f"""
           ### Question: 
           {result['question']}
@@ -38,9 +52,27 @@ class QAWithContext(object):
         display(Markdown(output_text))
 
     def embedding_result_similarity(self, vector_store_dir, str_question):
+        """
+        Returns similarity scores for the stored vector embeddings & 
+        user question.
         
+        Parameters:
+        -----------
+            vector_store_dir : string
+                Name of folder where is located vector store.
+            str_question : string
+                User question.
+        Returns:
+        -----------
+            vector_store: angchain.vectorstores.FAISS
+                Embedding vectors as FAISS object.
+            min_similarity: float
+                Min similarity score between top 3 more similar documents.
+            mean_similarity: float
+                Mean similarity score between top 3 more similar documents.
+        """
         vector_store = FAISS.load_local(
-            vector_store_dir,
+            self.documents_dir + '/' + vector_store_dir,
             OpenAIEmbeddings()
         )
         search_result = vector_store.similarity_search_with_score(
@@ -55,16 +87,29 @@ class QAWithContext(object):
         del search_result['index']
         min_similarity = search_result.similarty.min()
         mean_similarity = search_result.head(3).similarty.mean()
-        return [min_similarity, mean_similarity]
+        return [vector_store, min_similarity, mean_similarity]
 
     def define_vector_store_to_use(self, str_question):
+        """
+        For two different document chunks it selects the one with 
+        the closest similarity.
+        
+        Parameters:
+        -----------
+            str_question : string
+                User question.
+        Returns:
+        -----------
+            vector_store: angchain.vectorstores.FAISS 
+                The most appropriate embedding for the given user question.
+        """
         (
-            min_similarity_large, mean_similarity_large
+            vector_store_large, min_similarity_large, mean_similarity_large
         ) = self.embedding_result_similarity(
             'vector_store_large_chunk', str_question
         )
         (
-            min_similarity_small, mean_similarity_small
+            vector_store_small, min_similarity_small, mean_similarity_small
         ) = self.embedding_result_similarity(
             'vector_store_small_chunk', str_question
         )
@@ -78,20 +123,24 @@ class QAWithContext(object):
         )
         if min_similarity_large<=min_similarity_small:
             print('Select large chunk embeds')
-            embeds_to_use = 'vector_store_large_chunk'
+            vector_store = vector_store_large
             n_k_args = 4
         else:
             print('Select small chunk embeds')
-            embeds_to_use = 'vector_store_small_chunk'
+            embeds_to_use = vector_store_small
             n_k_args = 8
             
-        vector_store = FAISS.load_local(
-            embeds_to_use,
-            OpenAIEmbeddings()
-        )
         return [vector_store, n_k_args]
 
     def generate_prompt(self):
+        """
+        Generate promp fro the LLM model.
+        
+        Returns:
+        -----------
+            output_text: Markdown 
+                Formated text.
+        """
         system_template="""
             Use the following context 
             to answer the users question.
@@ -120,7 +169,18 @@ class QAWithContext(object):
         return chain_type_kwargs
 
     def ask_chat_gpt(self, str_query, vector_store, n_k_args):
+        """
+        Format results.
         
+        Parameters:
+        -----------
+            result : json
+                Results of QA. Keys: ['question', 'answer', 'source_documents']
+        Returns:
+        -----------
+            output_text: Markdown 
+                Formated text.
+        """
         chain_type_kwargs = self.generate_prompt()
         
         llm = ChatOpenAI(
@@ -144,7 +204,18 @@ class QAWithContext(object):
         return result
 
     def ask_chat_gpt_w_multiq(self, str_query, vector_store, n_k_args):
-
+        """
+        Format results.
+        
+        Parameters:
+        -----------
+            result : json
+                Results of QA. Keys: ['question', 'answer', 'source_documents']
+        Returns:
+        -----------
+            output_text: Markdown 
+                Formated text.
+        """
         chain_type_kwargs = self.generate_prompt()
         
         llm = ChatOpenAI(

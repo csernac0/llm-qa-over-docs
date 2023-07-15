@@ -16,16 +16,16 @@ class LoadDocument(object):
         """
         Convert folder and file name into an url.
         
-        Parameters:
-        -----------
-            doc_name : string
-                Document name.
-            document_folder : string
-                Folder name.
-        Returns:
-        -----------
-            url_name: string
-                Url for document.
+        Parameters
+        ----------
+        doc_name : string
+            Document name.
+        document_folder : string
+            Folder name.
+        Returns
+        -------
+        url_name: string
+            Url for document.
         """
         # Cast json to dataframe.
         # Convert path string into url.
@@ -41,10 +41,10 @@ class LoadDocument(object):
         then convert texts into document store langchain.
         This object allows us to keep text and metadata as well.
 
-        Returns:
-        -----------
-            lg_documents: langchain.docstore.document.Document
-                The object has text and metadata of the file as well.
+        Returns
+        -------
+        lg_documents: langchain.docstore.document.Document
+            The object has text and metadata of the file as well.
         """
         # Get data path.
         data_path = pathlib.Path(
