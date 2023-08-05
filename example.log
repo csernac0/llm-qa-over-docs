@@ -1,0 +1,3 @@
+INFO:langchain.retrievers.multi_query:Generated queries: ['1. ¿Qué información se encuentra en los datos?', '2. ¿Cuál es el contenido de los datos?', '3. ¿Qué tipo de información está incluida en la data?']
+INFO:langchain.retrievers.multi_query:Generated queries: ['1. ¿Qué información se encuentra en la base de datos?', '2. ¿Cuál es el contenido de los datos almacenados?', '3. ¿Qué tipo de información está incluida en la base de datos?']
+INFO:langchain.retrievers.multi_query:Generated queries: ['1. ¿Qué información se encuentra en los datos?', '2. ¿Cuál es el contenido de los datos?', '3. ¿Qué tipo de información está incluida en la data?']

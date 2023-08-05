@@ -240,9 +240,14 @@ class QAWithContext(object):
             temperature=0, 
             max_tokens=400
         )
-        
+
         # llm, and vector_store.as_retriever can be configured.
+        # Remove all handlers associated with the root logger object.
         logging.basicConfig()
+
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.basicConfig(filename='generated_log.log')
         logging.getLogger(
             'langchain.retrievers.multi_query'
         ).setLevel(logging.INFO)
@@ -256,6 +261,7 @@ class QAWithContext(object):
         multi_q_docs = retriever_from_llm.get_relevant_documents(
             query=str_query
         )
+
 
         embeddings = OpenAIEmbeddings()
         vector_store_multi_q = FAISS.from_documents(
@@ -274,4 +280,10 @@ class QAWithContext(object):
         )
         
         result = chain(str_query)
-        return result
+        f = open("generated_log.log", "r")
+        log_info = f.read().split(
+            'INFO:langchain.retrievers.multi_query:',
+            1
+        )[1]
+        os.remove("generated_log.log")
+        return [result, log_info]
