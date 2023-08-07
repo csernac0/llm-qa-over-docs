@@ -1,4 +1,6 @@
 # Streamlit imports.
+import os
+import numpy as np
 import streamlit as st
 import streamlit_toggle as tog
 
@@ -20,6 +22,18 @@ enabled_info = tog.st_toggle_switch(
     active_color="#11567f",
     track_color="#29B5E8"
 )
+
+
+st.write('Save or update your OpenAI API key')
+api_key = st.text_input(
+    'OpenAI API key', 
+    type='password', 
+    label_visibility="collapsed"
+)
+if api_key:
+    with open('.env', 'w') as f:
+        f.write('OPENAI_API_KEY=' + api_key.strip())
+
 uploaded_files = st.file_uploader(
     'Upload your document', accept_multiple_files=True,
     type=['txt', 'py', 'pdf']
@@ -106,7 +120,12 @@ if uploaded_files:
         result, info_log = obj_qa_context.ask_chat_gpt_w_multiq(
             user_question, vector_store, n_k_args
         )
-        info_log = "Using an LLM to generate multiple queries from different perspectives for a given user input query.\n" + info_log
+        info_log = info_log.replace('Generated queries: ', '').strip()
+        arr = [i.strip().replace("'",'') for i in info_log[1:-1].split(",")]
+
+        info_log = """Generates multiple queries 
+            from different perspectives for the given user input query.
+            \n\n""" + str(arr[0]) + "\n" + str(arr[1]) + "\n" + str(arr[2])
         st.info(info_log, icon="ℹ️")
         st.write(result['answer'])
 
