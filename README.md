@@ -26,6 +26,7 @@ Or there is a notebook index.ipynb
 ## Knowledge
 
 
+
 ![QA_Over_Documents](https://github.com/csernac0/llm-qa-over-docs/assets/30326740/fddc8946-14d5-46e5-a93d-3b7ee13f1c83)
 
 
