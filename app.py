@@ -1,5 +1,6 @@
 # Streamlit imports.
 import os
+import pypdf
 import numpy as np
 import streamlit as st
 import streamlit_toggle as tog
@@ -10,9 +11,11 @@ from src.get_embeddings import GetEmbeddings
 from src.qa_context import QAWithContext
 
 # Set page components.
+ss = st.session_state
 st.set_page_config(page_title='QA Over Documents')
 st.header('QA Over Documents')
 ENABLE_DETAILS = False
+SET_API_KEY = False
 enabled_info = tog.st_toggle_switch(
     label="View process details",
     key="Key1",
@@ -23,22 +26,49 @@ enabled_info = tog.st_toggle_switch(
     track_color="#29B5E8"
 )
 
-
-st.write('Save or update your OpenAI API key')
-api_key = st.text_input(
-    'OpenAI API key', 
-    type='password', 
-    label_visibility="collapsed"
-)
-if api_key:
+# Save or update OpenAI Api Key.
+def save_env():
+    api_key = ss.get('api_key')
     with open('.env', 'w') as f:
         f.write('OPENAI_API_KEY=' + api_key.strip())
 
+change_api_key = st.button('Save or update OpenAI API key')
+if change_api_key:
+    SET_API_KEY = True
+
+if SET_API_KEY:
+    api_key = st.text_input(
+        'OpenAI API key', 
+        type='password', 
+        key='api_key',
+        on_change=save_env,
+        label_visibility="collapsed"
+    )
+
+
+# Updload files. Multiple files are supported.
+st.write('')
+st.write('### Upload your documents')
 uploaded_files = st.file_uploader(
-    'Upload your document', accept_multiple_files=True,
-    type=['txt', 'py', 'pdf']
+    'Upload your document', 
+    accept_multiple_files=True,
+    type=['txt', 'py', 'pdf'],
+    label_visibility="collapsed"
 )
 
+def get_text_from_file(file):
+    if '.pdf' in file.name:
+        f = file.read()
+        pdf_reader = pypdf.PdfReader(file.read())
+        text = ''
+        print('pags',len(pdf_reader.pages))
+        for i in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[i]
+            text += page.extract_text()
+        print(text[0:1000])
+        return text
+    else:
+        return file.getvalue().decode('utf-8')
 # Catch user actions.
 if enabled_info:
     ENABLE_DETAILS = True
@@ -46,11 +76,10 @@ if enabled_info:
 if uploaded_files:
     list_uploaded_files = [
         [
-            file.getvalue().decode('utf-8'),
+            get_text_from_file(file),
             file.name
         ] for file in uploaded_files
     ]
-
     obj_load_doc = LoadDocument()
     lgc_documents = obj_load_doc.get_lgc_documents(list_uploaded_files)
 
@@ -110,7 +139,9 @@ if uploaded_files:
 
     obj_qa_context = QAWithContext('vector_store_st')
 
-    user_question = st.text_input("Ask a question about your Data:")
+    st.write('')
+    st.write('### Ask a question about your data')
+    user_question = st.text_input("Ask a question about your Data:", label_visibility="collapsed")
 
     if user_question:
         vector_store, n_k_args = obj_qa_context.define_vector_store_to_use(
@@ -124,7 +155,7 @@ if uploaded_files:
         arr = [i.strip().replace("'",'') for i in info_log[1:-1].split(",")]
 
         info_log = """Generates multiple queries 
-            from different perspectives for the given user input query.
+            from different perspectives for the given question.
             \n\n""" + str(arr[0]) + "\n" + str(arr[1]) + "\n" + str(arr[2])
         st.info(info_log, icon="ℹ️")
         st.write(result['answer'])

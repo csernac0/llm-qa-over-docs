@@ -196,7 +196,8 @@ class QAWithContext(object):
         chain_type_kwargs = self.generate_prompt()
         
         llm = ChatOpenAI(
-            model_name="gpt-3.5-turbo-16k", 
+            model_name="gpt-4", 
+            #model_name="gpt-3.5-turbo-16k", 
             temperature=0, 
             max_tokens=400
         )
@@ -236,7 +237,8 @@ class QAWithContext(object):
         chain_type_kwargs = self.generate_prompt()
         
         llm = ChatOpenAI(
-            model_name="gpt-3.5-turbo-16k", 
+            model_name="gpt-4", 
+            #model_name="gpt-3.5-turbo-16k", 
             temperature=0, 
             max_tokens=400
         )
@@ -251,6 +253,7 @@ class QAWithContext(object):
         logging.getLogger(
             'langchain.retrievers.multi_query'
         ).setLevel(logging.INFO)
+        
         retriever_from_llm = MultiQueryRetriever.from_llm(
                 retriever=vector_store.as_retriever(
                 search_kwargs={"k": n_k_args},

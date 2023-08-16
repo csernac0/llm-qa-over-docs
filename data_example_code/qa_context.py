@@ -32,15 +32,17 @@ class QAWithContext(object):
         """
         Format results.
         
-        Parameters:
-        -----------
-            result : json
-                Results of QA. Keys: ['question', 'answer', 'source_documents']
-        Returns:
-        -----------
-            output_text: Markdown 
-                Formated text.
+        Parameters
+        ----------
+        result : json
+            Results of QA. Keys: ['question', 'answer', 'source_documents']
+
+        Returns
+        -------
+        output_text : Markdown 
+            Formated text.
         """
+        # Format Output.
         output_text = f"""
           ### Question: 
           {result['question']}
@@ -49,32 +51,36 @@ class QAWithContext(object):
           ### All relevant sources:
           {' '.join(list(set([doc.metadata['source'] for doc in result['source_documents']])))}
         """
+        # Display output.
         display(Markdown(output_text))
 
     def embedding_result_similarity(self, vector_store_dir, str_question):
         """
-        Returns similarity scores for the stored vector embeddings & 
+        Returns similarity scores between the stored vector embeddings & 
         user question.
         
-        Parameters:
-        -----------
-            vector_store_dir : string
-                Name of folder where is located vector store.
-            str_question : string
-                User question.
-        Returns:
-        -----------
-            vector_store: angchain.vectorstores.FAISS
-                Embedding vectors as FAISS object.
-            min_similarity: float
-                Min similarity score between top 3 more similar documents.
-            mean_similarity: float
-                Mean similarity score between top 3 more similar documents.
+        Parameters
+        ----------
+        vector_store_dir : string
+            Name of folder where is located vector store.
+        str_question : string
+            User question.
+
+        Returns
+        -------
+        vector_store: angchain.vectorstores.FAISS
+            Embedding vectors as FAISS object.
+        min_similarity: float
+            Min similarity score between top 3 more similar documents.
+        mean_similarity: float
+            Mean similarity score between top 3 more similar documents.
         """
+        # Load embeddings store.
         vector_store = FAISS.load_local(
             self.documents_dir + '/' + vector_store_dir,
             OpenAIEmbeddings()
         )
+        # Search the chunks with lowest similarity.
         search_result = vector_store.similarity_search_with_score(
             str_question, k=3
         )
@@ -94,14 +100,15 @@ class QAWithContext(object):
         For two different document chunks it selects the one with 
         the closest similarity.
         
-        Parameters:
-        -----------
-            str_question : string
-                User question.
-        Returns:
-        -----------
-            vector_store: angchain.vectorstores.FAISS 
-                The most appropriate embedding for the given user question.
+        Parameters
+        ----------
+        str_question : string
+            User question.
+
+        Returns
+        -------
+        vector_store : angchain.vectorstores.FAISS 
+            The most appropriate embedding for the given user question.
         """
         (
             vector_store_large, min_similarity_large, mean_similarity_large
@@ -127,19 +134,19 @@ class QAWithContext(object):
             n_k_args = 4
         else:
             print('Select small chunk embeds')
-            embeds_to_use = vector_store_small
+            vector_store = vector_store_small
             n_k_args = 8
             
         return [vector_store, n_k_args]
 
     def generate_prompt(self):
         """
-        Generate promp fro the LLM model.
+        Generate promp for the LLM model.
         
-        Returns:
-        -----------
-            output_text: Markdown 
-                Formated text.
+        Returns
+        -------
+        output_text : Markdown 
+            Formated text.
         """
         system_template="""
             Use the following context 
@@ -170,16 +177,21 @@ class QAWithContext(object):
 
     def ask_chat_gpt(self, str_query, vector_store, n_k_args):
         """
-        Format results.
+        Use a custom base to fine tune llm OpenAI Chatgpt.
         
-        Parameters:
-        -----------
-            result : json
-                Results of QA. Keys: ['question', 'answer', 'source_documents']
-        Returns:
-        -----------
-            output_text: Markdown 
-                Formated text.
+        Parameters
+        ----------
+        str_question : string
+            User question.
+        vector_store : angchain.vectorstores.FAISS
+            Embedding vectors as FAISS object.
+        n_k_args : int
+            Numer of chunks to use in the fine tunning.
+
+        Returns
+        -------
+        result : json
+            Results of QA. Keys: ['question', 'answer', 'source_documents']
         """
         chain_type_kwargs = self.generate_prompt()
         
@@ -205,16 +217,21 @@ class QAWithContext(object):
 
     def ask_chat_gpt_w_multiq(self, str_query, vector_store, n_k_args):
         """
-        Format results.
-        
-        Parameters:
-        -----------
-            result : json
-                Results of QA. Keys: ['question', 'answer', 'source_documents']
-        Returns:
-        -----------
-            output_text: Markdown 
-                Formated text.
+        Use a custom base to fine tune llm OpenAI Chatgpt.
+        Adittionaly this method generates 
+        Parameters
+        ----------
+        str_question : string
+            User question.
+        vector_store : angchain.vectorstores.FAISS
+            Embedding vectors as FAISS object.
+        n_k_args : int
+            Numer of chunks to use in the fine tunning.
+
+        Returns
+        -------
+        result : json
+            Results of QA. Keys: ['question', 'answer', 'source_documents']
         """
         chain_type_kwargs = self.generate_prompt()
         
@@ -223,9 +240,14 @@ class QAWithContext(object):
             temperature=0, 
             max_tokens=400
         )
-        
+
         # llm, and vector_store.as_retriever can be configured.
+        # Remove all handlers associated with the root logger object.
         logging.basicConfig()
+
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.basicConfig(filename='generated_log.log')
         logging.getLogger(
             'langchain.retrievers.multi_query'
         ).setLevel(logging.INFO)
@@ -239,6 +261,7 @@ class QAWithContext(object):
         multi_q_docs = retriever_from_llm.get_relevant_documents(
             query=str_query
         )
+
 
         embeddings = OpenAIEmbeddings()
         vector_store_multi_q = FAISS.from_documents(
@@ -257,4 +280,10 @@ class QAWithContext(object):
         )
         
         result = chain(str_query)
-        return result
+        f = open("generated_log.log", "r")
+        log_info = f.read().split(
+            'INFO:langchain.retrievers.multi_query:',
+            1
+        )[1]
+        os.remove("generated_log.log")
+        return [result, log_info]
