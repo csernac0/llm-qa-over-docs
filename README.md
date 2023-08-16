@@ -6,7 +6,7 @@ Suppose you possess various text documents (such as PDFs, txt, code etc.) and wa
 
 ## Prerequisites
 
-1. python 3.11
+1. python 3.9
 2. OpenAI APIKey. Please generate a **.env** file with the key. This file must be saved at this level with the following structure.
     ```bash
     OPENAI_API_KEY=your_key   
