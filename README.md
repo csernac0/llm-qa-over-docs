@@ -24,6 +24,5 @@ streamlit run app.py
 Or there is a notebook index.ipynb
 
 ## Knowledge
-
-![load_transform](https://github.com/csernac0/llm-qa-over-docs/assets/30326740/ed20863a-8e33-44e4-a3d5-a01b59b0ec60)
+![load_transform](https://github.com/csernac0/llm-qa-over-docs/assets/30326740/2324eebd-367b-4db8-92c8-7ef8c0531b3e)
 ![qa_over_docs](https://github.com/csernac0/llm-qa-over-docs/assets/30326740/49a03fad-5fda-4304-ace7-cb58497819be)
