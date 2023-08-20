@@ -253,7 +253,7 @@ class QAWithContext(object):
         logging.getLogger(
             'langchain.retrievers.multi_query'
         ).setLevel(logging.INFO)
-        
+
         retriever_from_llm = MultiQueryRetriever.from_llm(
                 retriever=vector_store.as_retriever(
                 search_kwargs={"k": n_k_args},
@@ -270,7 +270,7 @@ class QAWithContext(object):
         vector_store_multi_q = FAISS.from_documents(
             multi_q_docs, embeddings
         )
-
+        print('ok')
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm=llm,
             chain_type="stuff",

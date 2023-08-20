@@ -53,6 +53,17 @@ class GetEmbeddings(object):
         splitted_doc = text_splitter.split_documents(
             documents
         )
+        if len(splitted_doc)==1:
+            # Instanciate text splitter object with desired params.
+            text_splitter = CharacterTextSplitter(
+                separator=" ",
+                chunk_size=chunk_size_limit, 
+                chunk_overlap=max_chunk_overlap
+            )
+            # Split text into chunks.
+            splitted_doc = text_splitter.split_documents(
+                documents
+            )
         print('Splitted doc:', len(splitted_doc))
         return splitted_doc
 

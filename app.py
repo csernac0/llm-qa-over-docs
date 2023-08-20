@@ -1,6 +1,6 @@
 # Streamlit imports.
 import os
-import pypdf
+import PyPDF2
 import numpy as np
 import streamlit as st
 import streamlit_toggle as tog
@@ -59,14 +59,19 @@ uploaded_files = st.file_uploader(
 def get_text_from_file(file):
     if '.pdf' in file.name:
         f = file.read()
-        pdf_reader = pypdf.PdfReader(file.read())
+        pdf_reader = PyPDF2.PdfReader(file)
         text = ''
+        cleanText = ""
         print('pags',len(pdf_reader.pages))
         for i in range(len(pdf_reader.pages)):
             page = pdf_reader.pages[i]
             text += page.extract_text()
-        print(text[0:1000])
-        return text
+        for myWord in text:
+            if myWord == '\n':
+                cleanText += ' '
+            else:
+                cleanText += myWord
+        return cleanText
     else:
         return file.getvalue().decode('utf-8')
 # Catch user actions.
